@@ -122,8 +122,16 @@
     border:1.5px solid #d9d2bd; border-radius:10px; padding:10px 12px; margin:7px 0; font-size:14.5px;
     background:#fff;
   }
+  .choice-btn{
+    display:block; width:100%; text-align:left; font-family:var(--sans); color:var(--ink); cursor:pointer;
+  }
+  .choice-btn:active{background:#f1ede0;}
+  .choice-btn:disabled{cursor:default;}
   .choice.correct{border-color:var(--green); background:#e7f1ea; font-weight:600;}
-  .choice.wrong{border-color:var(--red); background:#f6e8e4; text-decoration:line-through; opacity:0.7;}
+  .choice.wrong{border-color:var(--red); background:#f6e8e4; opacity:0.85;}
+  .result-line{font-weight:700; font-size:14px; margin:12px 0 2px;}
+  .result-line.is-correct{color:var(--green);}
+  .result-line.is-wrong{color:var(--red);}
   .explain{font-size:13px; color:var(--ink-soft); margin-top:10px; line-height:1.5; border-top:1px dashed #d9d2bd; padding-top:10px;}
 
   .rate-row{display:flex; gap:10px; margin-top:18px;}

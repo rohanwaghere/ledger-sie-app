@@ -214,25 +214,59 @@ function FlashcardView(chapterId) {
 
   let current = weightedPick(chapter.questions, null);
   let flipped = false;
+  let answered = false;
+  let selectedIdx = null;
+  let lastWasCorrect = null;
 
   const cardEl = el("div","flashcard");
   function renderCard() {
     cardEl.className = "flashcard" + (flipped ? " flipped" : "");
     const st = getStat(current.id);
     const tagText = st.streak >= MASTER_THRESHOLD ? "MASTERED" : (st.seen ? "REVIEW" : "NEW");
+
+    let answerHtml = "";
+    if (flipped) {
+      const choicesHtml = current.choices.map((c,i) => {
+        let cls = "choice choice-btn";
+        if (answered) {
+          if (i === current.correct) cls += " correct";
+          else if (i === selectedIdx) cls += " wrong";
+        }
+        return `<button type="button" class="${cls}" data-idx="${i}" ${answered ? "disabled" : ""}>${c}</button>`;
+      }).join("");
+      answerHtml = `
+        <div class="answer-area" style="display:block;">
+          ${choicesHtml}
+          ${answered ? `<p class="result-line ${lastWasCorrect ? 'is-correct':'is-wrong'}">${lastWasCorrect ? "✓ Correct" : "✗ Not quite"}</p><p class="explain">${current.explain}</p>` : ""}
+        </div>
+      `;
+    }
+
     cardEl.innerHTML = `
       <span class="tag">${tagText} · ${chapter.title}</span>
       <p class="qtext">${current.question}</p>
-      <div class="answer-area">
-        ${current.choices.map((c,i) => `<div class="choice ${i===current.correct?'correct':''}">${c}</div>`).join("")}
-        <p class="explain">${current.explain}</p>
-      </div>
-      <span class="hint">${flipped ? "" : "Tap to reveal answer"}</span>
+      ${answerHtml}
+      <span class="hint">${flipped ? (answered ? "" : "Choose an answer") : "Tap to reveal choices"}</span>
     `;
+
+    if (flipped && !answered) {
+      Array.from(cardEl.querySelectorAll(".choice-btn")).forEach(btn => {
+        btn.onclick = (e) => {
+          e.stopPropagation();
+          selectedIdx = parseInt(btn.dataset.idx, 10);
+          answered = true;
+          lastWasCorrect = selectedIdx === current.correct;
+          recordAnswer(current.id, lastWasCorrect);
+          renderCard();
+          buildRateRow();
+          refreshStrip();
+        };
+      });
+    }
   }
   renderCard();
   cardEl.onclick = () => {
-    if (!flipped) { flipped = true; renderCard(); buildRateRow(); }
+    if (!flipped) { flipped = true; renderCard(); }
   };
   wrap.appendChild(cardEl);
 
@@ -243,9 +277,9 @@ function FlashcardView(chapterId) {
     rateSlot.innerHTML = "";
     const row = el("div","rate-row");
     const again = el("button","rate-btn rate-again","Still learning");
-    const good = el("button","rate-btn rate-good","Got it");
+    const good = el("button","rate-btn rate-good","Next card");
     again.onclick = () => { recordAnswer(current.id, false); nextCard(); };
-    good.onclick = () => { recordAnswer(current.id, true); nextCard(); };
+    good.onclick = () => { nextCard(); };
     row.appendChild(again); row.appendChild(good);
     rateSlot.appendChild(row);
   }
@@ -253,6 +287,9 @@ function FlashcardView(chapterId) {
   function nextCard() {
     current = weightedPick(chapter.questions, current.id);
     flipped = false;
+    answered = false;
+    selectedIdx = null;
+    lastWasCorrect = null;
     renderCard();
     rateSlot.innerHTML = "";
     refreshStrip();
