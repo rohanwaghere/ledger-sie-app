@@ -133,6 +133,7 @@ function Tabbar() {
   const tabs = [
     { id: "home", icon: "📚", label: "Chapters" },
     { id: "test", icon: "📝", label: "Test" },
+    { id: "concepts", icon: "💡", label: "Concepts" },
     { id: "progress", icon: "📈", label: "Progress" },
     { id: "settings", icon: "⚙️", label: "Settings" },
   ];
@@ -144,6 +145,7 @@ function Tabbar() {
     const b = document.createElement("button");
     const activeName = route.name === "home" || route.name === "flashcards" ? "home"
       : (route.name === "test" || route.name === "quiz" || route.name === "custom") ? "test"
+      : (route.name === "concepts" || route.name === "conceptDetail") ? "concepts"
       : route.name;
     if (activeName === t.id) b.classList.add("active");
     b.innerHTML = `<span class="icon">${t.icon}</span><span>${t.label}</span>`;
@@ -163,6 +165,8 @@ function currentView() {
     case "flashcards": return FlashcardView(route.chapterId);
     case "test": return TestHubView();
     case "quiz": return QuizView(route.chapterIds, route.count);
+    case "concepts": return ConceptsHubView();
+    case "conceptDetail": return ConceptsDetailView(route.chapterId);
     case "progress": return ProgressView();
     case "settings": return SettingsView();
     default: return ChapterListView();
@@ -449,6 +453,61 @@ function QuizView(chapterIds, count) {
   renderQ();
   return wrap;
 }
+
+// ----- Concepts (study notes) -----
+function ConceptsHubView() {
+  const wrap = el("div");
+  wrap.appendChild(el("h1","page-title","Concepts & details"));
+  wrap.appendChild(el("p","page-sub","Plain-language explanations of the ideas behind the questions — read these when you want the 'why,' not just the right answer."));
+  CHAPTERS.forEach((ch, i) => {
+    const list = (CONCEPTS && CONCEPTS[ch.id]) || [];
+    const card = el("div","chapter-card");
+    card.innerHTML = `
+      <div class="num">${String(i+1).padStart(2,"0")}</div>
+      <div class="body">
+        <p class="ttl">${ch.title}</p>
+        <p class="blurb">${list.length} key concepts explained</p>
+      </div>
+    `;
+    card.onclick = () => nav({ name:"conceptDetail", chapterId: ch.id });
+    wrap.appendChild(card);
+  });
+  return wrap;
+}
+
+function ConceptsDetailView(chapterId) {
+  const chapter = CHAPTERS.find(c => c.id === chapterId) || CHAPTERS[0];
+  const list = (CONCEPTS && CONCEPTS[chapter.id]) || [];
+
+  const wrap = el("div");
+  const backBtn = el("button","btn btn-ghost btn-sm","← All concepts");
+  backBtn.style.marginBottom = "14px";
+  backBtn.onclick = () => nav({ name:"concepts" });
+  wrap.appendChild(backBtn);
+
+  wrap.appendChild(el("h1","page-title", chapter.title));
+  wrap.appendChild(el("p","page-sub", chapter.blurb));
+
+  if (!list.length) {
+    wrap.appendChild(el("p","empty","Concepts for this chapter are coming soon."));
+    return wrap;
+  }
+
+  list.forEach((item, i) => {
+    const card = el("div","concept-card");
+    const head = el("div","concept-head");
+    head.innerHTML = `<span class="term">${item.term}</span><span class="chev">▶</span>`;
+    const body = el("div","concept-body", `<p>${item.detail}</p>`);
+    head.onclick = () => { card.classList.toggle("open"); };
+    card.appendChild(head);
+    card.appendChild(body);
+    if (i === 0) card.classList.add("open");
+    wrap.appendChild(card);
+  });
+
+  return wrap;
+}
+
 
 // ----- Progress -----
 function ProgressView() {
