@@ -1,9 +1,10 @@
-const CACHE = "ledger-sie-v2";
+const CACHE = "ledger-sie-v3";
 const ASSETS = [
   "./",
   "./index.html",
   "./app.js",
   "./data.js",
+  "./concepts.js",
   "./manifest.json",
   "./icon-192.png",
   "./icon-512.png",
